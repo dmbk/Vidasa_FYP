@@ -1,0 +1,11 @@
+============do not remove 'data' folder ====================
+cd _build
+cmake ../
+make 
+
+Execute using
+./bin/vidasa ./data/veh.mp4 ./data/ped.mp4
+
+FYI
+//blobs can be improved 
+//pedestrian detection can be improved using HOG+SVM verification

@@ -1,0 +1,49 @@
+#include <iostream>
+#include <string>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+class vehicle_det;
+class pedestrian_det;
+
+class abstract_det{
+protected:
+int process_equation(int input_val)=0;
+public:
+
+//for multi-threaded execution purposes
+static std::mutex m;
+static std::condition_variable cv;
+static Total_Score;
+static void init_total_score();
+
+
+
+
+void start_session()=0;
+void do_iteration()=0;
+int get_updated_count();
+        
+};
+int Total_Score=100;
+
+void abstract_det::init_total_score(){
+//read from the file and initialize
+	Total_Score=100;
+}
+
+class main_processor{
+private:
+abstract_det* pedestrian_detector;
+abstract_det* vehicle_detector;
+static main_processor proc;
+main_processor();
+public:
+~main_processor();
+static main_processor init_processor();
+void do_process();
+
+};
+
+

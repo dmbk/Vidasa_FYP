@@ -1,0 +1,94 @@
+#include "main_processor.hpp"
+//#include "pedestrian_det.hpp"
+#include <iostream>
+#include <cstdlib>
+#include <pthread.h>
+
+using namespace std;
+using namespace cv;
+
+long abstract_det::Total_Score=1000;
+main_processor* main_processor::proc=NULL;
+std::mutex abstract_det::m;
+std::condition_variable abstract_det::cv;
+int abstract_det::_session_started=0;
+
+void abstract_det::init_total_score(){
+cout<<__PRETTY_FUNCTION__<<endl;
+//read from the file and initialize
+	abstract_det::Total_Score=1000;
+}
+void abstract_det::set_session_started(int val){
+	_session_started=val;
+
+}
+int abstract_det::session_started(){
+	return _session_started;
+}
+
+main_processor::main_processor(int argc,char** argv){
+cout<<__PRETTY_FUNCTION__<<endl;
+    string width_roi="80";
+    string height_roi="80";	
+    char* argvs_veh[]={argv[0],argv[1],&width_roi[0],&height_roi[0]};
+    /*1-veh_vid_path
+      2-width_roi
+      3-height_roi
+      4-MAX_VEH_DENSITY
+    */
+    vehicle_detector = vehicle_det::get_detetctor(4, argvs_veh);
+    
+    char* argvs_ped[]={argv[0],argv[2]};
+    /*1-ped_vid_path
+      2-MAX_PED_DENSITY
+    */
+    pedestrian_detector = pedestrian_det::get_detetctor(3, argvs_ped);
+
+}
+main_processor::~main_processor(){
+delete pedestrian_detector;
+delete vehicle_detector;
+
+}
+main_processor* main_processor::init_processor(int argc,char** argv){
+cout<<__PRETTY_FUNCTION__<<endl;
+    abstract_det::init_total_score();
+    abstract_det::_session_started=0;
+    main_processor::proc= new main_processor(argc,argv);
+    return proc;
+   
+
+
+}
+
+void main_processor::do_process(){
+cout<<__PRETTY_FUNCTION__<<endl;
+    while(true){
+        while(pedestrian_detector->get_updated_count()==0){
+	    cout<<"iter 1"<<endl;
+            pedestrian_detector->do_iteration();
+        }
+	abstract_det::set_session_started(1);//start of session
+        while(abstract_det::Total_Score>0){
+	    cout<<"total score iter2 "<<abstract_det::Total_Score<<endl;
+            pedestrian_detector->do_iteration();
+            vehicle_detector->do_iteration();
+        }
+	
+	abstract_det::set_session_started(0);//end of session
+        printf("Show Red Light------------->allow pedestrians go\n");
+	destroyAllWindows();
+	abstract_det::init_total_score();
+        if(waitKey(5000)==27){
+            break;
+        }
+    }
+}
+
+int main(int argc, char ** argv)
+{cout<<__PRETTY_FUNCTION__<<endl;
+    main_processor* processor=main_processor::init_processor(argc,argv);
+    processor->do_process();
+    delete processor;
+
+}	
